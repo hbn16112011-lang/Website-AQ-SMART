@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AQ Smart - Khảo sát Chỉ số Vượt khó (C.O.R.E)</title>
+    <!-- Tailwind CSS cho giao diện hiện đại -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js để vẽ biểu đồ -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between">
+
+    <!-- Header -->
+    <header class="bg-indigo-600 text-white shadow-md">
+        <div class="max-w-4xl mx-auto px-4 py-6 text-center">
+            <h1 class="text-2xl md:text-3xl font-bold tracking-tight">AQ SMART - KHẢO SÁT CHỈ SỐ VƯỢT KHÓ</h1>
+            <p class="text-indigo-100 text-sm mt-1">Đánh giá 4 thành tố C.O.R.E (Control, Ownership, Reach, Endurance)</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-3xl w-full mx-auto px-4 py-8 flex-grow">
+        
+        <!-- Form Nhập thông tin -->
+        <section id="info-section" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 mb-6">
+            <h2 class="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                <span class="bg-indigo-100 text-indigo-700 w-7 h-7 rounded-full inline-flex items-center justify-center text-sm">1</span>
+                Thông tin người tham gia
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Họ và tên</label>
+                    <input type="text" id="user-name" placeholder="Nhập họ tên của bạn..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Lớp / Đơn vị</label>
+                    <input type="text" id="user-class" placeholder="Ví dụ: 10A2..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                </div>
+            </div>
+            <button onclick="startSurvey()" class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-xl transition shadow-sm">
+                Bắt đầu làm khảo sát
+            </button>
+        </section>
+
+        <!-- Khung Câu hỏi (Ẩn ban đầu) -->
+        <section id="survey-section" class="hidden space-y-6">
+            <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 text-indigo-900 text-sm">
+                💡 <strong>Hướng dẫn:</strong> Với mỗi phát biểu dưới đây, hãy chọn mức độ phù hợp nhất với bản thân từ 1 (Hoàn toàn không đúng) đến 5 (Rất đúng).
+            </div>
+
+            <div id="questions-container" class="space-y-4">
+                <!-- Câu hỏi sẽ được render bằng JavaScript ở đây -->
+            </div>
+
+            <button onclick="calculateResults()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3.5 rounded-xl transition shadow-sm text-base">
+                Xem kết quả phân tích
+            </button>
+        </section>
+
+        <!-- Khung Kết quả (Ẩn ban đầu) -->
+        <section id="result-section" class="hidden space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
+                <h2 class="text-xl font-bold text-slate-900 mb-2 text-center">Kết Quả Khảo Sát C.O.R.E</h2>
+                <p id="result-meta" class="text-center text-sm text-slate-500 mb-6"></p>
+
+                <!-- Biểu đồ -->
+                <div class="max-w-xs mx-auto mb-8">
+                    <canvas id="aqChart"></canvas>
+                </div>
+
+                <!-- Bảng điểm chi tiết -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-slate-50 p-4 rounded-xl text-center border border-slate-100">
+                        <div class="text-xs font-semibold text-slate-500 uppercase">Control (Kiểm soát)</div>
+                        <div id="score-control" class="text-2xl font-bold text-indigo-600 mt-1">0.0</div>
+                        <div class="text-xs text-slate-400 mt-0.5">Thang 1 - 5</div>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl text-center border border-slate-100">
+                        <div class="text-xs font-semibold text-slate-500 uppercase">Ownership (Sở hữu)</div>
+                        <div id="score-ownership" class="text-2xl font-bold text-indigo-600 mt-1">0.0</div>
+                        <div class="text-xs text-slate-400 mt-0.5">Thang 1 - 5</div>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl text-center border border-slate-100">
+                        <div class="text-xs font-semibold text-slate-500 uppercase">Reach (Tầm ảnh hưởng)</div>
+                        <div id="score-reach" class="text-2xl font-bold text-indigo-600 mt-1">0.0</div>
+                        <div class="text-xs text-slate-400 mt-0.5">Thang 1 - 5</div>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl text-center border border-slate-100">
+                        <div class="text-xs font-semibold text-slate-500 uppercase">Endurance (Sức bền)</div>
+                        <div id="score-endurance" class="text-2xl font-bold text-indigo-600 mt-1">0.0</div>
+                        <div class="text-xs text-slate-400 mt-0.5">Thang 1 - 5</div>
+                    </div>
+                </div>
+
+                <div class="flex gap-4">
+                    <button onclick="window.print()" class="flex-1 bg-slate-800 hover:bg-slate-900 text-white font-medium py-3 rounded-xl transition text-sm">
+                        In / Lưu báo cáo
+                    </button>
+                    <button onclick="location.reload()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-3 rounded-xl transition text-sm">
+                        Làm lại khảo sát
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center py-6 text-xs text-slate-400">
+        AQ Smart Tool &copy; 2026 - Nghiên cứu Khoa học Trường THPT Quảng Trị
+    </footer>
+
+    <!-- Script Xử lý Logic -->
+    <script>
+        const questions = [
+            // Control
+            { id: 1, group: 'Control', text: 'Khi gặp bài tập khó, em xác định được bước đầu tiên mình có thể thực hiện.', reverse: false },
+            { id: 2, group: 'Control', text: 'Em cảm thấy mình hoàn toàn bất lực khi đối mặt với một dạng đề hoàn toàn mới lạ.', reverse: true },
+            { id: 3, group: 'Control', text: 'Em biết cách chia nhỏ vấn đề phức tạp thành các phần dễ giải quyết hơn.', reverse: false },
+            { id: 4, group: 'Control', text: 'Khi áp lực thi cử đến gần, em thấy mình mất kiểm soát và không thể tập trung.', reverse: true },
+            
+            // Ownership
+            { id: 5, group: 'Ownership', text: 'Khi kết quả học tập chưa đạt mục tiêu, em chủ động tìm cách điều chỉnh phương pháp học.', reverse: false },
+            { id: 6, group: 'Ownership', text: 'Em thườngổn định tâm lý bằng cáchổn định lỗi do đề thi quá khó hoặc do thầy cô chấm khắt khe.', reverse: true },
+            { id: 7, group: 'Ownership', text: 'Em chủ động hỏi thầy cô hoặc bạn bè khi chưa hiểu rõ một vấn đề học tập.', reverse: false },
+            { id: 8, group: 'Ownership', text: 'Em nghĩ rằng việc cố gắng thêm cũng chẳng thay đổi được điểm số của mình.', reverse: true },
+
+            // Reach
+            { id: 9, group: 'Reach', text: 'Khi một bài kiểm tra không tốt, em vẫn có thể nhìn nhận riêng biệt năng lực của mình ở những môn khác.', reverse: false },
+            { id: 10, group: 'Reach', text: 'Một điểm số kém khiến em cảm thấy bản thân vô dụng trong mọi việc.', reverse: true },
+            { id: 11, group: 'Reach', text: 'Em biết cách tách biệt áp lực học tập ra khỏi thời gian nghỉ ngơi và sinh hoạt cá nhân.', reverse: false },
+            { id: 12, group: 'Reach', text: 'Sự cố ở một môn học làm em chán nản và muốn bỏ bê toàn bộ việc học.', reverse: true },
+
+            // Endurance
+            { id: 13, group: 'Endurance', text: 'Khi chưa thấy tiến bộ, em xem xét điều chỉnh kế hoạch thay vì vội kết luận rằng mình không thể cải thiện.', reverse: false },
+            { id: 14, group: 'Endurance', text: 'Chỉ sau vài lần thử mà chưa thành công, em dễ dàng từ bỏ mục tiêu đề ra.', reverse: true },
+            { id: 15, group: 'Endurance', text: 'Em tin rằng sự kiên trì luyện tập theo thời gian sẽ đem lại kết quả tốt hơn.', reverse: false },
+            { id: 16, group: 'Endurance', text: 'Em thấy mệt mỏi và không muốn tiếp tục duy trì nhịp độ học tập sau thời gian ngắn.', reverse: true }
+        ];
+
+        let myChart = null;
+
+        function startSurvey() {
+            const name = document.getElementById('user-name').value.trim();
+            if (!name) {
+                alert('Vui lòng nhập tên của bạn trước khi bắt đầu!');
+                return;
+            }
+
+            document.getElementById('info-section').classList.add('hidden');
+            document.getElementById('survey-section').classList.remove('hidden');
+
+            const container = document.getElementById('questions-container');
+            container.innerHTML = '';
+
+            questions.forEach((q, index) => {
+                const card = document.createElement('div');
+                card.className = 'bg-white p-5 rounded-2xl border border-slate-100 shadow-sm';
+                card.innerHTML = `
+                    <p class="text-sm font-medium text-slate-900 mb-3">
+                        <span class="text-indigo-600 font-bold mr-1">Cần ${index + 1}.</span> ${q.text}
+                    </p>
+                    <div class="grid grid-cols-5 gap-2 text-center text-xs">
+                        <label class="cursor-pointer bg-slate-50 hover:bg-indigo-50 p-2.5 rounded-xl border border-slate-200 flex flex-col items-center gap-1 transition">
+                            <input type="radio" name="q${q.id}" value="1" class="text-indigo-600 focus:ring-indigo-500">
+                            <span>1. Không đúng</span>
+                        </label>
+                        <label class="cursor-pointer bg-slate-50 hover:bg-indigo-50 p-2.5 rounded-xl border border-slate-200 flex flex-col items-center gap-1 transition">
+                            <input type="radio" name="q${q.id}" value="2" class="text-indigo-600 focus:ring-indigo-500">
+                            <span>2. Ít đúng</span>
+                        </label>
+                        <label class="cursor-pointer bg-slate-50 hover:bg-indigo-50 p-2.5 rounded-xl border border-slate-200 flex flex-col items-center gap-1 transition">
+                            <input type="radio" name="q${q.id}" value="3" class="text-indigo-600 focus:ring-indigo-500">
+                            <span>3. Một phần</span>
+                        </label>
+                        <label class="cursor-pointer bg-slate-50 hover:bg-indigo-50 p-2.5 rounded-xl border border-slate-200 flex flex-col items-center gap-1 transition">
+                            <input type="radio" name="q${q.id}" value="4" class="text-indigo-600 focus:ring-indigo-500">
+                            <span>4. Khá đúng</span>
+                        </label>
+                        <label class="cursor-pointer bg-slate-50 hover:bg-indigo-50 p-2.5 rounded-xl border border-slate-200 flex flex-col items-center gap-1 transition">
+                            <input type="radio" name="q${q.id}" value="5" class="text-indigo-600 focus:ring-indigo-500">
+                            <span>5. Rất đúng</span>
+                        </label>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function calculateResults() {
+            let scores = { Control: [], Ownership: [], Reach: [], Endurance: [] };
+
+            for (let q of questions) {
+                const selected = document.querySelector(`input[name="q${q.id}"]:checked`);
+                if (!selected) {
+                    alert(`Bạn chưa trả lời câu hỏi số ${q.id}. Vui lòng hoàn thành tất cả!`);
+                    return;
+                }
+
+                let val = parseInt(selected.value);
+                // Quy đổi câu đảo chiều (Reverse items: 1->5, 2->4, 3->3, 4->2, 5->1)
+                if (q.reverse) {
+                    val = 6 - val;
+                }
+
+                scores[q.group].push(val);
+            }
+
+            // Tính trung bình mỗi nhóm
+            const avgControl = (scores.Control.reduce((a, b) => a + b, 0) / 4).toFixed(2);
+            const avgOwnership = (scores.Ownership.reduce((a, b) => a + b, 0) / 4).toFixed(2);
+            const avgReach = (scores.Reach.reduce((a, b) => a + b, 0) / 4).toFixed(2);
+            const avgEndurance = (scores.Endurance.reduce((a, b) => a + b, 0) / 4).toFixed(2);
+
+            // Hiển thị thông tin lên giao diện
+            document.getElementById('score-control').innerText = avgControl;
+            document.getElementById('score-ownership').innerText = avgOwnership;
+            document.getElementById('score-reach').innerText = avgReach;
+            document.getElementById('score-endurance').innerText = avgEndurance;
+
+            const name = document.getElementById('user-name').value;
+            const className = document.getElementById('user-class').value;
+            document.getElementById('result-meta').innerText = `Học sinh: ${name} ${className ? '(' + className + ')' : ''}`;
+
+            document.getElementById('survey-section').classList.add('hidden');
+            document.getElementById('result-section').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Vẽ biểu đồ Radar
+            const ctx = document.getElementById('aqChart').getContext('2d');
+            if (myChart) myChart.destroy();
+
+            myChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Control', 'Ownership', 'Reach', 'Endurance'],
+                    datasets: [{
+                        label: 'Điểm C.O.R.E',
+                        data: [avgControl, avgOwnership, avgReach, avgEndurance],
+                        backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                        borderColor: 'rgb(79, 70, 229)',
+                        pointBackgroundColor: 'rgb(79, 70, 229)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    scales: {
+                        r: {
+                            min: 0,
+                            max: 5,
+                            ticks: { stepSize: 1 }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
